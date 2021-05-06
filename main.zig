@@ -1,9 +1,13 @@
 const std = @import("std");
 const midi = @import("./midi.zig");
+const synth = @import("./synth.zig");
 const Writer = std.fs.File.Writer;
 
 pub fn main() !void {
-    try writeSampleMidiFile();
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("hehe {d}hz", .{try synth.midiNoteToFreqBasic(u8, 72)});
+    try stdout.print("hihi {d}hz", .{try synth.midiNoteToFreqBasic(f32, 72.5)});
+    // try writeSampleMidiFile();
 }
 
 pub fn writeSampleMidiFile() !void {
@@ -20,25 +24,25 @@ pub fn writeSampleMidiFile() !void {
 
 pub fn writeTempoTrack(fwriter: Writer, tempo: f32) !void {
     const trackPos = try midi.writeTrackHeader(fwriter);
+    defer try midi.writeEndOfTrack(fwriter, trackPos);
 
     try midi.writeTempoEvent(fwriter, tempo);
 
-    try midi.writeEndOfTrack(fwriter, trackPos);
 }
 
 pub fn writeScaleTrack(fwriter: Writer) !void {
     const trackPos = try midi.writeTrackHeader(fwriter);
+    defer try midi.writeEndOfTrack(fwriter, trackPos);
 
     const cMajorScale: [8]u8 = .{0x3C, 0x3E, 0x40, 0x41, 0x43, 0x45, 0x47, 0x48};
     inline for (cMajorScale) |note| {
         try midi.writeNote(fwriter, 0, 0, note, 0x7F, 96, 0);
     }
-
-    try midi.writeEndOfTrack(fwriter, trackPos);
 }
 
 pub fn writeDrumTrack(fwriter: Writer) !void {
     const trackPos = try midi.writeTrackHeader(fwriter);
+    defer try midi.writeEndOfTrack(fwriter, trackPos);
 
     const k: u8 = 36;
     const s: u8 = 40;
@@ -48,6 +52,4 @@ pub fn writeDrumTrack(fwriter: Writer) !void {
     inline for (pattern) |note| {
         try midi.writeNote(fwriter, 0, 9, note, 0x7F, 96, 0);
     }
-
-    try midi.writeEndOfTrack(fwriter, trackPos);
 }
